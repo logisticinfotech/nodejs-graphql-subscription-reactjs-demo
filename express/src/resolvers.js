@@ -1,9 +1,9 @@
 import { PubSub } from 'graphql-subscriptions';
 var mysql = require('mysql')
 var connection = mysql.createConnection({
-  host: '192.168.0.77',
-  user: 'gqlgenreact',
-  password: 'gqlgenreact',
+  host: 'localhost',
+  user: 'root',
+  password: 'root',
   database: 'gqlgenreact'
 });
 
@@ -16,9 +16,9 @@ const channels = [{
 }];
 
 let nextId = 3;
-const CHANNEL_ADDED_TOPIC = 'newChannel';
-const CHANNEL_UPDATE_TOPIC = 'updateChannel';
-const CHANNEL_DELETE_TOPIC = 'deleteChannel';
+const CHANNEL_ADDED_TOPIC = 'subscriptionChannelAdded';
+const CHANNEL_UPDATE_TOPIC = 'subscriptionChannelUpdated';
+const CHANNEL_DELETE_TOPIC = 'subscriptionChannelDeleted';
 const pubsub = new PubSub();
 
 export const resolvers = {
@@ -39,7 +39,7 @@ export const resolvers = {
           if (err) throw err
           const newChannel = { name: args.name, id: rows.insertId };
           console.log("newChannel :", newChannel);
-          pubsub.publish(CHANNEL_ADDED_TOPIC, { channelAdded: newChannel });
+          pubsub.publish(CHANNEL_ADDED_TOPIC, {subscriptionChannelAdded: newChannel});
           resolve(newChannel)
         })
       });
@@ -48,17 +48,20 @@ export const resolvers = {
         connection.query('UPDATE channel SET name=? WHERE id=?', [args.name, args.id], function (err, rows) {
           if (err) throw err
           const newChannel = { name: args.name, id: args.id };
-          pubsub.publish(CHANNEL_UPDATE_TOPIC, { channelUpdated: newChannel });
+          pubsub.publish(CHANNEL_UPDATE_TOPIC, { subscriptionChannelUpdated: newChannel });
           resolve(newChannel)
         })
       });
 
     }, deleteChannel: (root, args) => {
       return new Promise((resolve, reject) => {
+        console.log(args);
         connection.query('DELETE FROM channel WHERE id=?', [args.id], function (err, rows) {
+          console.log(err);
           if (err) throw err
           const newChannel = { name: "", id: args.id };
-          pubsub.publish(CHANNEL_DELETE_TOPIC, { channelDeleted: newChannel });
+          console.log(newChannel);
+          pubsub.publish(CHANNEL_DELETE_TOPIC, { subscriptionChannelDeleted: newChannel });
           resolve(newChannel)
         })
       });
@@ -66,13 +69,13 @@ export const resolvers = {
     }
   },
   Subscription: {
-    channelAdded: {
+    subscriptionChannelAdded: {
       subscribe: () => pubsub.asyncIterator(CHANNEL_ADDED_TOPIC)
     },
-    channelUpdated: {
+    subscriptionChannelUpdated: {
       subscribe: () => pubsub.asyncIterator(CHANNEL_UPDATE_TOPIC)
     },
-    channelDeleted: {
+    subscriptionChannelDeleted: {
       subscribe: () => pubsub.asyncIterator(CHANNEL_DELETE_TOPIC)
     }
   }

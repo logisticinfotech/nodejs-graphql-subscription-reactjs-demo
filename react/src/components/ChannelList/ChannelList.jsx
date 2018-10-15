@@ -1,13 +1,9 @@
 import React, { Component } from 'react';
-import {
-    gql,
-    graphql,
-    compose,
-    Mutation
-} from 'react-apollo';
-
+import { graphql, Mutation, compose } from 'react-apollo';
+import gql from 'graphql-tag';
 import _ from 'underscore';
 import update from 'react-addons-update';
+require('./ChannelList.css');
 
 class ChannelsList extends Component {
     constructor(props) {
@@ -16,57 +12,9 @@ class ChannelsList extends Component {
             id: "",
             nameValue: "",
         }
-        this.handleKeyUp = this.handleKeyUp.bind(this);
-        this.onChangeFunc = this.onChangeFunc.bind(this);
-        this.onEditClick = this.onEditClick.bind(this);
-        this.onDeleteClick = this.onDeleteClick.bind(this);
     }
-    componentWillMount() {
-        this.props.data.subscribeToMore({
-            document: channelSubscription,  // Use the subscription
-            updateQuery: (prev, { subscriptionData }) => {
-                if (!subscriptionData.data) {
-                    return prev;
-                }
 
-                const newChannel = subscriptionData.data.channelAdded;
-                // Add check to prevent double adding of channels.
-                if (!prev.channels.find((channel) => channel.name === newChannel.name)) {
-                    let updatedChannels = Object.assign({}, prev, { channels: [...prev.channels, newChannel] });
-                    return updatedChannels;
-                } else {
-                    return prev;
-                }
-            }
-        });
-        this.props.data.subscribeToMore({
-            document: deleteChannelSubscription,  // Use the subscription
-            updateQuery: (prev, { subscriptionData }) => {
-                if (!subscriptionData.data) {
-                    return prev;
-                }
-                const newChannel = subscriptionData.data.channelDeleted;
-                const deleteIndex = _.findIndex(prev.channels, (item) => item.id === newChannel.id);
-                if (deleteIndex < 0) {
-                    return prev;
-                }
-                return update(prev, {
-                    channels: {
-                        $splice: [[deleteIndex, 1]]
-                    }
-                });
-            }
-        });
-        this.props.data.subscribeToMore({
-            document: updateChannelSubscription,  // Use the subscription
-            updateQuery: (prev, { subscriptionData }) => {
-                if (!subscriptionData.data) {
-                    return prev;
-                }
-            }
-        });
-    }
-    handleKeyUp(evt) {
+    handleKeyUp = (evt) => {
         if (evt.keyCode === 13) {
             evt.persist();
             if (this.state.id !== "") {
@@ -92,40 +40,73 @@ class ChannelsList extends Component {
             }
         };
     }
-    onChangeFunc(event) {
-        this.setState({
-            nameValue: event.target.value
-        })
+
+
+    componentWillMount() {
+        this.props.data.subscribeToMore({
+            document: addChannelSubscription,  // Use the subscription
+            updateQuery: (prev, { subscriptionData }) => {
+                if (!subscriptionData.data) {
+                    return prev;
+                }
+                const newChannel = subscriptionData.data.subscriptionChannelAdded;
+                // Add check to prevent double adding of channels.
+                if (!prev.channels.find((channel) => channel.id === newChannel.id)) {
+                    let updatedChannels = Object.assign({}, prev, { channels: [...prev.channels, newChannel] });
+                    return updatedChannels;
+                } else {
+                    return prev;
+                }
+            }
+        });
+        this.props.data.subscribeToMore({
+            document: deleteChannelSubscription,  // Use the subscription
+            updateQuery: (prev, { subscriptionData }) => {
+                if (!subscriptionData.data) {
+                    return prev;
+                }
+                const newChannel = subscriptionData.data.subscriptionChannelDeleted;
+                const deleteIndex = _.findIndex(prev.channels, (item) => item.id === newChannel.id);
+                if (deleteIndex < 0) {
+                    return prev;
+                }
+                return update(prev, {
+                    channels: {
+                        $splice: [[deleteIndex, 1]]
+                    }
+                });
+            }
+        });
+        this.props.data.subscribeToMore({
+            document: updateChannelSubscription,  // Use the subscription
+            updateQuery: (prev, { subscriptionData }) => {
+                if (!subscriptionData.data) {
+                    return prev;
+                }
+            }
+        });
     }
-    onEditClick(ch) {
+
+    onEditClick = (ch) => {
         this.setState({
             nameValue: ch.name,
             id: ch.id
         });
     }
-    onDeleteClick(ch) {
-        this.props.deleteChannelMutation({
-            variables: {
-                id: ch.id
-            },
-        }).then((data) => {
-            console.log("delete Done");
-        });
+    onChangeFunc = (event) => {
+        this.setState({
+            nameValue: event.target.value
+        })
     }
     render() {
-        const { data: { loading, error, channels }, match } = this.props;
-
+        const { data: { loading, error, channels } } = this.props;
         if (loading) {
             return <p>Loading ...</p>;
         }
         if (error) {
             return <p>{error.message}</p>;
         }
-
         return (
-            // <ul className="list-group">
-            //     {channels.map(ch => <li className="list-group-item" key={ch.id}>{ch.name}</li>)}
-            // </ul>
             <div className="container">
                 <div className="row justify-content-md-center">
                     <div className="col-md-8">
@@ -148,13 +129,13 @@ class ChannelsList extends Component {
                                     </label>
                                     <div className="pull-right action-buttons">
                                         <a onClick={() => this.onEditClick(ch)} href="javascript:void(0)"><span className="fa fa-pencil"></span></a>
-                                        <a onClick={() => this.onDeleteClick(ch)} href="javascript:void(0)"><span className="fa fa-trash"></span></a>
-                                        {/* <Mutation mutation={deleteChannel} >
+
+                                        <Mutation mutation={deleteChannel} >
                                             {(deleteChannelMutation, { data }) => (
                                                 <a className="trash" href="javascript:void(0)" onClick={() => { deleteChannelMutation({ variables: { id: ch.id } }); }}><span className="fa fa-trash"></span></a>
 
                                             )}
-                                        </Mutation> */}
+                                        </Mutation>
                                     </div>
                                 </li>
                             )}
@@ -162,8 +143,10 @@ class ChannelsList extends Component {
                     </div>
                 </div>
             </div>
-        );
+        )
+
     }
+
 }
 
 export const channelsListQuery = gql`
@@ -175,17 +158,18 @@ export const channelsListQuery = gql`
    }
  `;
 
-const channelSubscription = gql`
+const addChannelSubscription = gql`
     subscription Channels {
-     channelAdded {
+     subscriptionChannelAdded {
        id
        name
      }
     }
 `
+
 const deleteChannelSubscription = gql`
     subscription Channels {
-    channelDeleted {
+     subscriptionChannelDeleted {
        id
        name
      }
@@ -193,16 +177,15 @@ const deleteChannelSubscription = gql`
 `
 const updateChannelSubscription = gql`
     subscription Channels {
-    channelUpdated {
+     subscriptionChannelUpdated {
        id
        name
      }
     }
 `
-
-const CreateChannelMutation = gql`
-  mutation addChannel($name: String!) {
-    addChannel(name: $name) {
+const deleteChannel = gql`
+  mutation deleteChannelMutation($id: Int!) {
+    deleteChannel(id: $id) {
       id
       name
     }
@@ -218,24 +201,17 @@ const updateChannel = gql`
   }
 `;
 
-const deleteChannel = gql`
-  mutation deleteChannelMutation($id: Int!) {
-    deleteChannel(id: $id) {
+const CreateChannelMutation = gql`
+  mutation addChannel($name: String!) {
+    addChannel(name: $name) {
       id
       name
     }
   }
 `;
-
 const multipleMutation = compose(
     graphql(CreateChannelMutation, { name: 'createChannelMutation' }),
-    graphql(updateChannel, { name: 'updateChannelMutation' }),
-    graphql(deleteChannel, { name: 'deleteChannelMutation' })
+    graphql(updateChannel, { name: 'updateChannelMutation' })
 )
 
 export default compose(multipleMutation, graphql(channelsListQuery))(ChannelsList);
-
-
-
-// const ChannelsListWithData = graphql(channelsListQuery)(ChannelsList);
-// export default ChannelsListWithData;

@@ -1,10 +1,10 @@
-GraphQL Subscription with express and React JS
+GraphQL Subscription with nodejs and Reactjs
 
 For this GraphQL Subscription demo we have used graphql-server-express, mysql and React JS Apollo-Client.
 
 In this blog we learn about graphql query,mutation and SUBSCRIPTION using express
 
-First of all we add some useful packages 
+First of all we add some useful packages
     -npm install graphql-tools,graphql-server-express,graphql-subscriptions
 
     graphql-subscriptions is useful for subscribe changes of data in graphql
@@ -47,18 +47,18 @@ Than we create a resolver which is useful for excute query,mutation and graphql 
     export const resolvers = {
         Query: {
             channels: () => {
-            
+
             }
         },
         Mutation: {
             addChannel: (root, args) => {
-            
-            }, 
+
+            },
             updateChannel: (root, args) => {
-           
-            }, 
+
+            },
             deleteChannel: (root, args) => {
-           
+
             }
         },
         Subscription: {
@@ -79,14 +79,14 @@ Now tricky things is to subscribe changes using graphql so let's i explain this 
          type Subscription {
             channelAdded: Channel
          }
-        
+
     2) Now we use pubsub for pulish and subscribe data like EventEmitter.
-        
+
         import { PubSub } from 'graphql-subscriptions';
         export const pubsub = new PubSub();
 
     3) Now you need to implement resolver for subscription type to map event using pubsub.asyncIterator
-        
+
         const CHANNEL_ADDED_TOPIC = 'newChannel';
         Subscription: {
             channelAdded: {
@@ -97,7 +97,7 @@ Now tricky things is to subscribe changes using graphql so let's i explain this 
     4) Now 4th step is important because Subscription method need to know something changed in our
     database so we add publish method in our code when something changed
 
-        pubsub.publish(CHANNEL_ADDED_TOPIC, { channelAdded: newChannel }); 
+        pubsub.publish(CHANNEL_ADDED_TOPIC, { channelAdded: newChannel });
         added when create a new channel
 
         addChannel: (root, args) => {
@@ -107,7 +107,7 @@ Now tricky things is to subscribe changes using graphql so let's i explain this 
                 const newChannel = { name: args.name, id: rows.insertId };
 
                 pubsub.publish(CHANNEL_ADDED_TOPIC, { channelAdded: newChannel });
-                
+
                 resolve(newChannel)
                 })
             });

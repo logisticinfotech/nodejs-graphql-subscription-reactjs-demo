@@ -1,4 +1,3 @@
-
 import express from 'express';
 import {
   graphqlExpress,
@@ -16,7 +15,7 @@ import { SubscriptionServer } from 'subscriptions-transport-ws';
 const PORT = 8090;
 const server = express();
 
-server.use('*', cors({ origin: 'http://192.168.0.35:7800' }));
+server.use('*', cors({ origin: 'http://localhost:3000' }));
 
 server.use('/graphql', bodyParser.json(), graphqlExpress({
   schema
@@ -24,14 +23,14 @@ server.use('/graphql', bodyParser.json(), graphqlExpress({
 
 server.use('/graphiql', graphiqlExpress({
   endpointURL: '/graphql',
-  subscriptionsEndpoint: `ws://192.168.0.35:${PORT}/subscriptions`
+  subscriptionsEndpoint: `ws://localhost:${PORT}/query`
 }));
 
 // We wrap the express server so that we can attach the WebSocket for subscriptions
 const ws = createServer(server);
 
 ws.listen(PORT, () => {
-  console.log(`GraphQL Server is now running on http://192.168.0.35:${PORT}`);
+  console.log(`GraphQL Server is now running on http://localhost:${PORT}`);
 
   // Set up the WebSocket for handling GraphQL subscriptions
   new SubscriptionServer({
@@ -40,6 +39,6 @@ ws.listen(PORT, () => {
     schema
   }, {
     server: ws,
-    path: '/subscriptions',
+    path: '/query',
   });
 });
