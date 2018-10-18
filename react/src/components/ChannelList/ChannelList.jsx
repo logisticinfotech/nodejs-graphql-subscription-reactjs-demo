@@ -41,10 +41,22 @@ class ChannelsList extends Component {
         };
     }
 
+    onChannelDelete = (chidOnDelete) => (evtOnDelete) => {
+        this.props.deleteChannelMutation({
+            variables: {
+                id: chidOnDelete
+            },
+        }).then((data) => {
+            // evt.target.value = '';
+        });
+    };
 
     componentWillMount() {
         this.props.data.subscribeToMore({
             document: addChannelSubscription,  // Use the subscription
+            onSubscriptionData: (options) => {
+                alert(options);
+            },
             updateQuery: (prev, { subscriptionData }) => {
                 if (!subscriptionData.data) {
                     return prev;
@@ -62,6 +74,8 @@ class ChannelsList extends Component {
         this.props.data.subscribeToMore({
             document: deleteChannelSubscription,  // Use the subscription
             updateQuery: (prev, { subscriptionData }) => {
+                console.log("deleteChannelSubscription updateChannels: ", subscriptionData);
+                console.log("deleteChannelSubscription prev: ", prev);
                 if (!subscriptionData.data) {
                     return prev;
                 }
@@ -80,6 +94,9 @@ class ChannelsList extends Component {
         this.props.data.subscribeToMore({
             document: updateChannelSubscription,  // Use the subscription
             updateQuery: (prev, { subscriptionData }) => {
+                console.log("updateChannelSubscription updateChannels: ", subscriptionData);
+                console.log("updateChannelSubscription prev: ", prev);
+                // return prev;
                 if (!subscriptionData.data) {
                     return prev;
                 }
@@ -130,12 +147,7 @@ class ChannelsList extends Component {
                                     <div className="pull-right action-buttons">
                                         <a onClick={() => this.onEditClick(ch)} href="javascript:void(0)"><span className="fa fa-pencil"></span></a>
 
-                                        <Mutation mutation={deleteChannel} >
-                                            {(deleteChannelMutation, { data }) => (
-                                                <a className="trash" href="javascript:void(0)" onClick={() => { deleteChannelMutation({ variables: { id: ch.id } }); }}><span className="fa fa-trash"></span></a>
-
-                                            )}
-                                        </Mutation>
+                                        <a className="trash" href="javascript:void(0)" onClick={this.onChannelDelete(ch.id)}><span className="fa fa-trash"></span></a>
                                     </div>
                                 </li>
                             )}
@@ -183,7 +195,7 @@ const updateChannelSubscription = gql`
      }
     }
 `
-const deleteChannel = gql`
+const deleteChannelMutation = gql`
   mutation deleteChannelMutation($id: Int!) {
     deleteChannel(id: $id) {
       id
@@ -192,7 +204,7 @@ const deleteChannel = gql`
   }
 `;
 
-const updateChannel = gql`
+const updateChannelMutation = gql`
   mutation updateChannelMutation($id: Int!,$name:String!) {
     updateChannel(id: $id,name:$name) {
       id
@@ -201,7 +213,7 @@ const updateChannel = gql`
   }
 `;
 
-const CreateChannelMutation = gql`
+const createChannelMutation = gql`
   mutation addChannel($name: String!) {
     addChannel(name: $name) {
       id
@@ -210,8 +222,9 @@ const CreateChannelMutation = gql`
   }
 `;
 const multipleMutation = compose(
-    graphql(CreateChannelMutation, { name: 'createChannelMutation' }),
-    graphql(updateChannel, { name: 'updateChannelMutation' })
+    graphql(createChannelMutation, { name: 'createChannelMutation' }),
+    graphql(updateChannelMutation, { name: 'updateChannelMutation' }),
+    graphql(deleteChannelMutation, { name: 'deleteChannelMutation' })
 )
 
 export default compose(multipleMutation, graphql(channelsListQuery))(ChannelsList);
