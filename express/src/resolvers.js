@@ -7,15 +7,6 @@ var connection = mysql.createConnection({
   database: 'gqlgenreact'
 });
 
-const channels = [{
-  id: 1,
-  name: 'soccer',
-}, {
-  id: 2,
-  name: 'baseball',
-}];
-
-let nextId = 3;
 const CHANNEL_ADDED_TOPIC = 'subscriptionChannelAdded';
 const CHANNEL_UPDATE_TOPIC = 'subscriptionChannelUpdated';
 const CHANNEL_DELETE_TOPIC = 'subscriptionChannelDeleted';

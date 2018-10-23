@@ -52,6 +52,7 @@ class ChannelsList extends Component {
     };
 
     componentWillMount() {
+        console.log(this.props)
         this.props.data.subscribeToMore({
             document: addChannelSubscription,  // Use the subscription
             onSubscriptionData: (options) => {
